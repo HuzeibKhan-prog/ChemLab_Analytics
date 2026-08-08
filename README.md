@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # 🧪 ChemLab Analytics
 
 **A Web-Based Chemistry and Mathematical Data Analysis System**
