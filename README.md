@@ -86,7 +86,7 @@ ChemLab_Analytics/
   example: `Temperature,Reaction_Rate`.
 - No external services or database are used — everything runs locally.
 
-## AUTHOR
+## Author 
 
 - Huzeib Khan
 
