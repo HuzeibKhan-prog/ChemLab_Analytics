@@ -89,6 +89,3 @@ ChemLab_Analytics/
 ## Author 
 
 - Huzeib Khan
-
-# ChemLab_Analytics
-ChemLab Analytics: Web-based system combining chemistry calculators, math solvers, and interactive data analysis for experiments.
