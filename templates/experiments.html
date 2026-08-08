@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Experiment Analysis — ChemLab Analytics{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Module 04</div>
+    <h1>Experiment Analysis</h1>
+    <p class="desc">Enter readings from a predefined experiment and ChemLab calculates and visualizes the results.</p>
+  </div>
+</div>
+
+<div class="tabs" id="exp-tabs">
+  <button class="active" data-tab="temp">Temperature vs Rate</button>
+  <button data-tab="conc">Concentration vs Rate</button>
+  <button data-tab="titration">Titration</button>
+  <button data-tab="density">Density</button>
+  <button data-tab="gaslaw">Gas Law</button>
+</div>
+
+<!-- Temperature vs Rate -->
+<div class="panel tab-panel" data-panel="temp">
+  <div class="panel-title"><span class="led"></span>Effect of Temperature on Reaction Rate</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Temperature readings (°C)</label><textarea id="temp-x" rows="3">20,30,40,50,60,70,80</textarea></div>
+    <div class="field"><label>Reaction rate readings</label><textarea id="temp-y" rows="3">0.12,0.18,0.29,0.43,0.61,0.85,1.10</textarea></div>
+  </div>
+  <button onclick="runTempRate()">Analyze</button>
+  <div class="result-box" id="temp-result" style="display:none;"></div>
+  <img id="temp-img" class="chart-img" style="display:none;">
+</div>
+
+<!-- Concentration vs Rate -->
+<div class="panel tab-panel" data-panel="conc" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Concentration vs Reaction Rate</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Concentration readings (mol/L)</label><textarea id="conc-x" rows="3">0.1,0.2,0.3,0.4,0.5</textarea></div>
+    <div class="field"><label>Reaction rate readings</label><textarea id="conc-y" rows="3">0.05,0.11,0.16,0.22,0.27</textarea></div>
+  </div>
+  <button onclick="runConcRate()">Analyze</button>
+  <div class="result-box" id="conc-result" style="display:none;"></div>
+  <img id="conc-img" class="chart-img" style="display:none;">
+</div>
+
+<!-- Titration -->
+<div class="panel tab-panel" data-panel="titration" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Titration Analysis (M1V1 = M2V2)</div>
+  <p class="hint">Find the unknown solution's molarity from the known titrant used to reach the equivalence point.</p>
+  <div class="grid grid-3">
+    <div class="field"><label>Known molarity (mol/L)</label><input type="number" step="any" id="tit-molarity" placeholder="0.1"></div>
+    <div class="field"><label>Known volume used (mL)</label><input type="number" step="any" id="tit-knownvol" placeholder="24.5"></div>
+    <div class="field"><label>Unknown sample volume (mL)</label><input type="number" step="any" id="tit-unknownvol" placeholder="25"></div>
+  </div>
+  <button onclick="runTitration()">Calculate</button>
+  <div class="result-box" id="tit-result" style="display:none;"></div>
+</div>
+
+<!-- Density experiment -->
+<div class="panel tab-panel" data-panel="density" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Density Experiment (multiple trials)</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Mass readings (g)</label><textarea id="den-mass" rows="3">12.4,12.6,12.5</textarea></div>
+    <div class="field"><label>Volume readings (mL)</label><textarea id="den-vol" rows="3">10.0,10.1,9.9</textarea></div>
+  </div>
+  <button onclick="runDensityExp()">Analyze</button>
+  <div class="result-box" id="den-result" style="display:none;"></div>
+  <img id="den-img" class="chart-img" style="display:none;">
+</div>
+
+<!-- Gas law experiment -->
+<div class="panel tab-panel" data-panel="gaslaw" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Simple Gas-Law Experiment (PV = nRT)</div>
+  <p class="hint">Leave exactly one field blank to solve for it.</p>
+  <div class="grid grid-3">
+    <div class="field"><label>P — pressure (atm)</label><input type="number" step="any" id="gl-p"></div>
+    <div class="field"><label>V — volume (L)</label><input type="number" step="any" id="gl-v"></div>
+    <div class="field"><label>n — moles (mol)</label><input type="number" step="any" id="gl-n"></div>
+  </div>
+  <div class="grid grid-3">
+    <div class="field"><label>T — temperature (K)</label><input type="number" step="any" id="gl-t"></div>
+  </div>
+  <button onclick="runGasLawExp()">Solve</button>
+  <div class="result-box" id="gl-result" style="display:none;"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('#exp-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#exp-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.style.display = (p.dataset.panel === target) ? 'block' : 'none';
+    });
+  });
+});
+
+async function runTempRate() {
+  const box = document.getElementById('temp-result');
+  const img = document.getElementById('temp-img');
+  const temperature = parseValueList(document.getElementById('temp-x').value);
+  const rate = parseValueList(document.getElementById('temp-y').value);
+  const data = await postJSON('/api/experiments/temperature-rate', { temperature, rate });
+  if (!data.ok) { showError(box, data.error); img.style.display = 'none'; return; }
+  showResult(box, renderKV([["Pairs analyzed", data.n], ["Correlation (r)", data.correlation]]));
+  img.src = 'data:image/png;base64,' + data.image_base64;
+  img.style.display = 'block';
+}
+
+async function runConcRate() {
+  const box = document.getElementById('conc-result');
+  const img = document.getElementById('conc-img');
+  const concentration = parseValueList(document.getElementById('conc-x').value);
+  const rate = parseValueList(document.getElementById('conc-y').value);
+  const data = await postJSON('/api/experiments/concentration-rate', { concentration, rate });
+  if (!data.ok) { showError(box, data.error); img.style.display = 'none'; return; }
+  showResult(box, renderKV([["Pairs analyzed", data.n], ["Correlation (r)", data.correlation]]));
+  img.src = 'data:image/png;base64,' + data.image_base64;
+  img.style.display = 'block';
+}
+
+async function runTitration() {
+  const box = document.getElementById('tit-result');
+  const payload = {
+    known_molarity: document.getElementById('tit-molarity').value,
+    known_volume_ml: document.getElementById('tit-knownvol').value,
+    unknown_volume_ml: document.getElementById('tit-unknownvol').value,
+  };
+  const data = await postJSON('/api/experiments/titration', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Unknown molarity", data.unknown_molarity + " mol/L"]]));
+}
+
+async function runDensityExp() {
+  const box = document.getElementById('den-result');
+  const img = document.getElementById('den-img');
+  const mass = parseValueList(document.getElementById('den-mass').value);
+  const volume = parseValueList(document.getElementById('den-vol').value);
+  const data = await postJSON('/api/experiments/density-exp', { mass, volume });
+  if (!data.ok) { showError(box, data.error); img.style.display = 'none'; return; }
+  showResult(box, renderKV([["Trial densities", data.densities.join(", ")], ["Average density", data.average_density + " g/mL"]]));
+  img.src = 'data:image/png;base64,' + data.image_base64;
+  img.style.display = 'block';
+}
+
+async function runGasLawExp() {
+  const box = document.getElementById('gl-result');
+  const payload = { p: fieldOrNull('gl-p'), v: fieldOrNull('gl-v'), n: fieldOrNull('gl-n'), t: fieldOrNull('gl-t') };
+  const data = await postJSON('/api/experiments/gas-law', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["P (atm)", data.P], ["V (L)", data.V], ["n (mol)", data.n], ["T (K)", data.T], ["Solved for", data.solved_for]]));
+}
+</script>
+{% endblock %}

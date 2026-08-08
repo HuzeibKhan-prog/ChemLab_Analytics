@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}ChemLab Analytics — Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">System Dashboard</div>
+    <h1>ChemLab Analytics</h1>
+    <p class="desc">A web-based chemistry and mathematical data analysis system. Run calculations, analyze lab data, and visualize results — all in one place, no database required.</p>
+  </div>
+</div>
+
+<div class="grid grid-3" style="grid-template-columns: repeat(3, 1fr);">
+
+  <a href="{{ url_for('chemistry_page') }}" class="mod-card" style="--accent: var(--teal);">
+    <div class="num">MODULE 01</div>
+    <h3>Chemistry Calculator</h3>
+    <p>Molecular mass, moles ↔ mass, molarity, dilution, density, % concentration, ideal gas law, and basic stoichiometry.</p>
+    <div class="tags"><span>M = m/MM</span><span>C1V1=C2V2</span><span>PV=nRT</span></div>
+  </a>
+
+  <a href="{{ url_for('mathematics_page') }}" class="mod-card" style="--accent: var(--amber);">
+    <div class="num">MODULE 02</div>
+    <h3>Mathematics &amp; Statistics</h3>
+    <p>Mean, median, mode, variance, standard deviation, percentage, correlation, basic equations, and function graphing.</p>
+    <div class="tags"><span>σ</span><span>r(x,y)</span><span>f(x)</span></div>
+  </a>
+
+  <a href="{{ url_for('analyzer_page') }}" class="mod-card" style="--accent: var(--violet);">
+    <div class="num">MODULE 03</div>
+    <h3>Laboratory Data Analyzer</h3>
+    <p>Upload a CSV of experimental readings — Pandas computes averages, extremes, std dev, and correlation, then charts it.</p>
+    <div class="tags"><span>CSV</span><span>Pandas</span><span>NumPy</span></div>
+  </a>
+
+  <a href="{{ url_for('experiments_page') }}" class="mod-card" style="--accent: var(--coral);">
+    <div class="num">MODULE 04</div>
+    <h3>Experiment Analysis</h3>
+    <p>Predefined experiments: temperature vs rate, concentration vs rate, titration, density, and gas-law readings.</p>
+    <div class="tags"><span>Titration</span><span>Kinetics</span><span>Gas Law</span></div>
+  </a>
+
+  <a href="{{ url_for('analyzer_page') }}" class="mod-card" style="--accent: var(--teal);">
+    <div class="num">MODULE 05</div>
+    <h3>Visualization</h3>
+    <p>Line charts, bar charts, scatter plots, distributions, and correlation heatmaps rendered with Matplotlib &amp; Seaborn.</p>
+    <div class="tags"><span>Matplotlib</span><span>Seaborn</span></div>
+  </a>
+
+</div>
+
+<div class="panel" style="margin-top: 6px;">
+  <div class="panel-title"><span class="led"></span>Getting Started</div>
+  <table>
+    <tr><th style="width:40px;">1</th><td>Open <strong>Chemistry Calculator</strong> or <strong>Mathematics &amp; Statistics</strong> for instant single-value calculations.</td></tr>
+    <tr><th>2</th><td>Open <strong>Lab Data Analyzer</strong> and upload a CSV — or load the bundled sample dataset — to get summary stats and charts.</td></tr>
+    <tr><th>3</th><td>Open <strong>Experiment Analysis</strong> to run a guided version of a common lab experiment (kinetics, titration, density, gas law).</td></tr>
+  </table>
+</div>
+
+{% endblock %}

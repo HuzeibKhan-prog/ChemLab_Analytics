@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ChemLab Analytics{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">ChemLab Analytics
+        <span>Data &amp; Chemistry System</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}" class="{{ 'active' if active == 'home' else '' }}"><span class="dot"></span>Dashboard</a>
+      <a href="{{ url_for('chemistry_page') }}" class="{{ 'active' if active == 'chemistry' else '' }}"><span class="dot"></span>Chemistry Calculator</a>
+      <a href="{{ url_for('mathematics_page') }}" class="{{ 'active' if active == 'mathematics' else '' }}"><span class="dot"></span>Mathematics &amp; Statistics</a>
+      <a href="{{ url_for('analyzer_page') }}" class="{{ 'active' if active == 'analyzer' else '' }}"><span class="dot"></span>Lab Data Analyzer</a>
+      <a href="{{ url_for('experiments_page') }}" class="{{ 'active' if active == 'experiments' else '' }}"><span class="dot"></span>Experiment Analysis</a>
+    </nav>
+    <div class="sidebar-foot">© 2026 ChemLab Analytics<br></div>
+  </aside>
+
+  <main class="main">
+    <div class="readout"><svg viewBox="0 0 1000 30" preserveAspectRatio="none">
+      <path d="M0,15 L60,15 L75,4 L90,26 L105,15 L160,15 L175,9 L190,21 L205,15 L280,15 L295,2 L310,28 L325,15 L420,15 L435,10 L450,20 L465,15 L560,15 L575,3 L590,27 L605,15 L700,15 L715,8 L730,22 L745,15 L840,15 L855,5 L870,25 L885,15 L1000,15"
+        fill="none" stroke-width="1.4"/>
+    </svg></div>
+
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

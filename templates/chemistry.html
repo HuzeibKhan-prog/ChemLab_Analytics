@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Chemistry Calculator — ChemLab Analytics{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Module 01</div>
+    <h1>Chemistry Calculator</h1>
+    <p class="desc">Molecular mass, moles ↔ mass, molarity, dilution, density, percentage concentration, ideal gas law, and basic stoichiometry.</p>
+  </div>
+</div>
+
+<div class="tabs" id="chem-tabs">
+  <button class="active" data-tab="mass">Molecular Mass</button>
+  <button data-tab="molesmass">Moles ↔ Mass</button>
+  <button data-tab="molarity">Molarity</button>
+  <button data-tab="dilution">Dilution</button>
+  <button data-tab="density">Density</button>
+  <button data-tab="percent">% Concentration</button>
+  <button data-tab="gas">Ideal Gas Law</button>
+  <button data-tab="stoich">Stoichiometry</button>
+</div>
+
+<!-- Molecular Mass -->
+<div class="panel tab-panel" data-panel="mass">
+  <div class="panel-title"><span class="led"></span>Molecular Mass</div>
+  <div class="field">
+    <label>Chemical formula (e.g. H2O, Ca(OH)2, Al2(SO4)3)</label>
+    <input type="text" id="mm-formula" placeholder="C6H12O6">
+  </div>
+  <button onclick="calcMolecularMass()">Calculate</button>
+  <div class="result-box" id="mm-result" style="display:none;"></div>
+</div>
+
+<!-- Moles <-> Mass -->
+<div class="panel tab-panel" data-panel="molesmass" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Moles ↔ Mass</div>
+  <div class="tabs" style="margin-bottom:14px;">
+    <button class="active" data-modemm="to_moles">Mass → Moles</button>
+    <button data-modemm="to_mass">Moles → Mass</button>
+  </div>
+  <div class="grid grid-3">
+    <div class="field" id="mm2-mass-wrap"><label>Mass (g)</label><input type="number" step="any" id="mm2-mass" placeholder="18"></div>
+    <div class="field" id="mm2-moles-wrap" style="display:none;"><label>Moles (mol)</label><input type="number" step="any" id="mm2-moles" placeholder="1"></div>
+    <div class="field"><label>Molar mass (g/mol)</label><input type="number" step="any" id="mm2-molarmass" placeholder="18.015"></div>
+  </div>
+  <button onclick="calcMolesMass()">Calculate</button>
+  <div class="result-box" id="mm2-result" style="display:none;"></div>
+</div>
+
+<!-- Molarity -->
+<div class="panel tab-panel" data-panel="molarity" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Molarity (M = mol / L)</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Moles of solute (mol)</label><input type="number" step="any" id="mol-moles" placeholder="0.5"></div>
+    <div class="field"><label>Volume of solution (L)</label><input type="number" step="any" id="mol-volume" placeholder="2"></div>
+  </div>
+  <button onclick="calcMolarity()">Calculate</button>
+  <div class="result-box" id="mol-result" style="display:none;"></div>
+</div>
+
+<!-- Dilution -->
+<div class="panel tab-panel" data-panel="dilution" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Dilution (C₁V₁ = C₂V₂)</div>
+  <p class="hint">Leave exactly one field blank — that's the value ChemLab will solve for.</p>
+  <div class="grid grid-2">
+    <div class="field"><label>C1 — initial concentration</label><input type="number" step="any" id="dil-c1"></div>
+    <div class="field"><label>V1 — initial volume</label><input type="number" step="any" id="dil-v1"></div>
+    <div class="field"><label>C2 — final concentration</label><input type="number" step="any" id="dil-c2"></div>
+    <div class="field"><label>V2 — final volume</label><input type="number" step="any" id="dil-v2"></div>
+  </div>
+  <button onclick="calcDilution()">Solve</button>
+  <div class="result-box" id="dil-result" style="display:none;"></div>
+</div>
+
+<!-- Density -->
+<div class="panel tab-panel" data-panel="density" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Density (d = m / V)</div>
+  <p class="hint">Provide exactly two of the three fields.</p>
+  <div class="grid grid-3">
+    <div class="field"><label>Mass (g)</label><input type="number" step="any" id="den-mass"></div>
+    <div class="field"><label>Volume (mL or cm³)</label><input type="number" step="any" id="den-volume"></div>
+    <div class="field"><label>Density (g/mL)</label><input type="number" step="any" id="den-density"></div>
+  </div>
+  <button onclick="calcDensity()">Solve</button>
+  <div class="result-box" id="den-result" style="display:none;"></div>
+</div>
+
+<!-- Percentage concentration -->
+<div class="panel tab-panel" data-panel="percent" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Percentage Concentration (% w/w)</div>
+  <p class="hint">Provide exactly two of the three fields.</p>
+  <div class="grid grid-3">
+    <div class="field"><label>Solute mass (g)</label><input type="number" step="any" id="pc-solute"></div>
+    <div class="field"><label>Solution mass (g)</label><input type="number" step="any" id="pc-solution"></div>
+    <div class="field"><label>Percent (%)</label><input type="number" step="any" id="pc-percent"></div>
+  </div>
+  <button onclick="calcPercentConc()">Solve</button>
+  <div class="result-box" id="pc-result" style="display:none;"></div>
+</div>
+
+<!-- Ideal Gas Law -->
+<div class="panel tab-panel" data-panel="gas" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Ideal Gas Law (PV = nRT)</div>
+  <p class="hint">Leave exactly one field blank. P in atm, V in L, n in mol, T in K. R = 0.082057 L·atm/(mol·K).</p>
+  <div class="grid grid-3">
+    <div class="field"><label>P — pressure (atm)</label><input type="number" step="any" id="gas-p"></div>
+    <div class="field"><label>V — volume (L)</label><input type="number" step="any" id="gas-v"></div>
+    <div class="field"><label>n — moles (mol)</label><input type="number" step="any" id="gas-n"></div>
+  </div>
+  <div class="grid grid-3">
+    <div class="field"><label>T — temperature (K)</label><input type="number" step="any" id="gas-t"></div>
+  </div>
+  <button onclick="calcGasLaw()">Solve</button>
+  <div class="result-box" id="gas-result" style="display:none;"></div>
+</div>
+
+<!-- Stoichiometry -->
+<div class="panel tab-panel" data-panel="stoich" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Basic Stoichiometry</div>
+  <p class="hint">For a reaction coeff_a·A → coeff_b·B, computes moles of A, moles of B, and mass of B produced.</p>
+  <div class="grid grid-3">
+    <div class="field"><label>Mass of A (g)</label><input type="number" step="any" id="st-massa" placeholder="10"></div>
+    <div class="field"><label>Molar mass of A (g/mol)</label><input type="number" step="any" id="st-mma" placeholder="58.44"></div>
+    <div class="field"><label>Molar mass of B (g/mol)</label><input type="number" step="any" id="st-mmb" placeholder="169.87"></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="field"><label>Coefficient of A</label><input type="number" step="any" id="st-coeffa" value="1"></div>
+    <div class="field"><label>Coefficient of B</label><input type="number" step="any" id="st-coeffb" value="1"></div>
+  </div>
+  <button onclick="calcStoich()">Calculate</button>
+  <div class="result-box" id="st-result" style="display:none;"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// --- tab switching ---
+document.querySelectorAll('#chem-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#chem-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.style.display = (p.dataset.panel === target) ? 'block' : 'none';
+    });
+  });
+});
+
+// --- moles<->mass sub-mode toggle ---
+let mmMode = "to_moles";
+document.querySelectorAll('[data-modemm]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-modemm]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mmMode = btn.dataset.modemm;
+    document.getElementById('mm2-mass-wrap').style.display = mmMode === 'to_moles' ? 'block' : 'none';
+    document.getElementById('mm2-moles-wrap').style.display = mmMode === 'to_mass' ? 'block' : 'none';
+  });
+});
+
+async function calcMolecularMass() {
+  const box = document.getElementById('mm-result');
+  const formula = document.getElementById('mm-formula').value.trim();
+  if (!formula) { showError(box, "Enter a chemical formula."); return; }
+  const data = await postJSON('/api/chemistry/molecular-mass', { formula });
+  if (!data.ok) { showError(box, data.error); return; }
+  const rows = data.breakdown.map(b => `<div class="kv"><span class="k">${b.element} × ${b.count} (${b.atomic_weight})</span><span class="v">${b.subtotal} g/mol</span></div>`).join('');
+  showResult(box, rows + `<div class="kv"><span class="k">Total molar mass</span><span class="v">${data.molar_mass} g/mol</span></div>`);
+}
+
+async function calcMolesMass() {
+  const box = document.getElementById('mm2-result');
+  const molarmass = document.getElementById('mm2-molarmass').value;
+  const payload = { mode: mmMode, molar_mass: molarmass };
+  if (mmMode === 'to_moles') payload.mass = document.getElementById('mm2-mass').value;
+  else payload.moles = document.getElementById('mm2-moles').value;
+  const data = await postJSON('/api/chemistry/moles-mass', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  if (mmMode === 'to_moles') showResult(box, renderKV([["Moles", data.moles + " mol"]]));
+  else showResult(box, renderKV([["Mass", data.mass + " g"]]));
+}
+
+async function calcMolarity() {
+  const box = document.getElementById('mol-result');
+  const moles = document.getElementById('mol-moles').value;
+  const volume_l = document.getElementById('mol-volume').value;
+  const data = await postJSON('/api/chemistry/molarity', { moles, volume_l });
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Molarity", data.molarity + " mol/L"]]));
+}
+
+async function calcDilution() {
+  const box = document.getElementById('dil-result');
+  const payload = {
+    c1: fieldOrNull('dil-c1'), v1: fieldOrNull('dil-v1'),
+    c2: fieldOrNull('dil-c2'), v2: fieldOrNull('dil-v2'),
+  };
+  const data = await postJSON('/api/chemistry/dilution', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([
+    ["C1", data.c1], ["V1", data.v1], ["C2", data.c2], ["V2", data.v2],
+    ["Solved for", data.solved_for.toUpperCase()],
+  ]));
+}
+
+async function calcDensity() {
+  const box = document.getElementById('den-result');
+  const payload = { mass: fieldOrNull('den-mass'), volume: fieldOrNull('den-volume'), density: fieldOrNull('den-density') };
+  const data = await postJSON('/api/chemistry/density', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Mass", data.mass + " g"], ["Volume", data.volume + " mL"], ["Density", data.density + " g/mL"], ["Solved for", data.solved_for]]));
+}
+
+async function calcPercentConc() {
+  const box = document.getElementById('pc-result');
+  const payload = { solute_mass: fieldOrNull('pc-solute'), solution_mass: fieldOrNull('pc-solution'), percent: fieldOrNull('pc-percent') };
+  const data = await postJSON('/api/chemistry/percent-concentration', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Solute mass", data.solute_mass + " g"], ["Solution mass", data.solution_mass + " g"], ["Percent", data.percent + " %"], ["Solved for", data.solved_for]]));
+}
+
+async function calcGasLaw() {
+  const box = document.getElementById('gas-result');
+  const payload = { p: fieldOrNull('gas-p'), v: fieldOrNull('gas-v'), n: fieldOrNull('gas-n'), t: fieldOrNull('gas-t') };
+  const data = await postJSON('/api/chemistry/ideal-gas', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["P (atm)", data.P.toFixed ? data.P.toFixed(5) : data.P], ["V (L)", data.V], ["n (mol)", data.n], ["T (K)", data.T], ["Solved for", data.solved_for]]));
+}
+
+async function calcStoich() {
+  const box = document.getElementById('st-result');
+  const payload = {
+    mass_a: document.getElementById('st-massa').value,
+    molar_mass_a: document.getElementById('st-mma').value,
+    molar_mass_b: document.getElementById('st-mmb').value,
+    coeff_a: document.getElementById('st-coeffa').value,
+    coeff_b: document.getElementById('st-coeffb').value,
+  };
+  const data = await postJSON('/api/chemistry/stoichiometry', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Moles of A", data.moles_a], ["Moles of B", data.moles_b], ["Mass of B", data.mass_b + " g"]]));
+}
+</script>
+{% endblock %}

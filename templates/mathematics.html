@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Mathematics & Statistics — ChemLab Analytics{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Module 02</div>
+    <h1>Mathematics &amp; Statistics</h1>
+    <p class="desc">Descriptive statistics, percentage, correlation, basic equations, and function graphing.</p>
+  </div>
+</div>
+
+<div class="tabs" id="math-tabs">
+  <button class="active" data-tab="stats">Descriptive Stats</button>
+  <button data-tab="percentage">Percentage</button>
+  <button data-tab="correlation">Correlation</button>
+  <button data-tab="equations">Equations</button>
+  <button data-tab="graph">Function Graph</button>
+</div>
+
+<!-- Descriptive stats -->
+<div class="panel tab-panel" data-panel="stats">
+  <div class="panel-title"><span class="led"></span>Mean · Median · Mode · Variance · Std Dev</div>
+  <div class="field">
+    <label>Values (comma or space separated)</label>
+    <textarea id="stats-values" rows="3" placeholder="12, 15, 15, 18, 20, 22, 25"></textarea>
+  </div>
+  <button onclick="calcStats()">Calculate</button>
+  <div class="result-box" id="stats-result" style="display:none;"></div>
+</div>
+
+<!-- Percentage -->
+<div class="panel tab-panel" data-panel="percentage" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Percentage</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Part</label><input type="number" step="any" id="pct-part" placeholder="45"></div>
+    <div class="field"><label>Whole</label><input type="number" step="any" id="pct-whole" placeholder="180"></div>
+  </div>
+  <button onclick="calcPercentage()">Calculate</button>
+  <div class="result-box" id="pct-result" style="display:none;"></div>
+</div>
+
+<!-- Correlation -->
+<div class="panel tab-panel" data-panel="correlation" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Correlation (Pearson r)</div>
+  <div class="grid grid-2">
+    <div class="field"><label>X values</label><textarea id="corr-x" rows="3" placeholder="20,30,40,50,60"></textarea></div>
+    <div class="field"><label>Y values</label><textarea id="corr-y" rows="3" placeholder="0.12,0.18,0.29,0.43,0.61"></textarea></div>
+  </div>
+  <button onclick="calcCorrelation()">Calculate</button>
+  <div class="result-box" id="corr-result" style="display:none;"></div>
+</div>
+
+<!-- Equations -->
+<div class="panel tab-panel" data-panel="equations" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Basic Equations</div>
+  <div class="tabs" style="margin-bottom:14px;">
+    <button class="active" data-eqtype="linear">Linear: ax + b = 0</button>
+    <button data-eqtype="quadratic">Quadratic: ax² + bx + c = 0</button>
+  </div>
+  <div class="grid grid-3">
+    <div class="field"><label>a</label><input type="number" step="any" id="eq-a" value="1"></div>
+    <div class="field"><label>b</label><input type="number" step="any" id="eq-b" value="0"></div>
+    <div class="field" id="eq-c-wrap" style="display:none;"><label>c</label><input type="number" step="any" id="eq-c" value="0"></div>
+  </div>
+  <button onclick="calcEquation()">Solve</button>
+  <div class="result-box" id="eq-result" style="display:none;"></div>
+</div>
+
+<!-- Graph -->
+<div class="panel tab-panel" data-panel="graph" style="display:none;">
+  <div class="panel-title"><span class="led"></span>Function Graph f(x)</div>
+  <p class="hint">Use x, and functions: sin, cos, tan, sqrt, log (base 10), ln, exp, abs, pi, e. Example: <code>sin(x) * x</code></p>
+  <div class="field"><label>f(x) =</label><input type="text" id="graph-expr" placeholder="sin(x)"></div>
+  <div class="grid grid-3">
+    <div class="field"><label>x min</label><input type="number" step="any" id="graph-xmin" value="-10"></div>
+    <div class="field"><label>x max</label><input type="number" step="any" id="graph-xmax" value="10"></div>
+    <div class="field"><label>points</label><input type="number" id="graph-points" value="200"></div>
+  </div>
+  <button onclick="plotFunction()">Plot</button>
+  <div class="result-box" id="graph-result" style="display:none;"></div>
+  <canvas id="graph-canvas" width="900" height="420" style="width:100%; display:none; margin-top:14px; background:#0f151a; border:1px solid var(--line); border-radius:3px;"></canvas>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('#math-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#math-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.style.display = (p.dataset.panel === target) ? 'block' : 'none';
+    });
+  });
+});
+
+async function calcStats() {
+  const box = document.getElementById('stats-result');
+  const values = parseValueList(document.getElementById('stats-values').value);
+  if (values.length === 0) { showError(box, "Enter at least one numeric value."); return; }
+  const data = await postJSON('/api/math/stats', { values });
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([
+    ["n", data.n], ["Mean", data.mean], ["Median", data.median],
+    ["Mode", Array.isArray(data.mode) ? data.mode.join(", ") : data.mode],
+    ["Min", data.min], ["Max", data.max], ["Range", data.range],
+    ["Variance (sample)", data.variance], ["Std Dev (sample)", data.std_dev],
+  ]));
+}
+
+async function calcPercentage() {
+  const box = document.getElementById('pct-result');
+  const part = document.getElementById('pct-part').value;
+  const whole = document.getElementById('pct-whole').value;
+  const data = await postJSON('/api/math/percentage', { part, whole });
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Percentage", data.percentage + " %"]]));
+}
+
+async function calcCorrelation() {
+  const box = document.getElementById('corr-result');
+  const x = parseValueList(document.getElementById('corr-x').value);
+  const y = parseValueList(document.getElementById('corr-y').value);
+  const data = await postJSON('/api/math/correlation', { x, y });
+  if (!data.ok) { showError(box, data.error); return; }
+  showResult(box, renderKV([["Pearson r", data.correlation]]));
+}
+
+let eqType = 'linear';
+document.querySelectorAll('[data-eqtype]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-eqtype]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    eqType = btn.dataset.eqtype;
+    document.getElementById('eq-c-wrap').style.display = eqType === 'quadratic' ? 'block' : 'none';
+  });
+});
+
+async function calcEquation() {
+  const box = document.getElementById('eq-result');
+  const payload = { type: eqType, a: document.getElementById('eq-a').value, b: document.getElementById('eq-b').value };
+  if (eqType === 'quadratic') payload.c = document.getElementById('eq-c').value;
+  const data = await postJSON('/api/math/equation', payload);
+  if (!data.ok) { showError(box, data.error); return; }
+  let sol = Array.isArray(data.solutions) ? data.solutions.join(", ") : data.solutions;
+  showResult(box, renderKV([["Type", data.type], ["Solutions", sol]]) + (data.discriminant !== undefined ? renderKV([["Discriminant", data.discriminant]]) : ''));
+}
+
+async function plotFunction() {
+  const box = document.getElementById('graph-result');
+  const canvas = document.getElementById('graph-canvas');
+  const expr = document.getElementById('graph-expr').value.trim();
+  if (!expr) { showError(box, "Enter an expression in terms of x."); return; }
+  const payload = {
+    expression: expr,
+    x_min: document.getElementById('graph-xmin').value,
+    x_max: document.getElementById('graph-xmax').value,
+    points: document.getElementById('graph-points').value,
+  };
+  const data = await postJSON('/api/math/graph', payload);
+  if (!data.ok) { showError(box, data.error); canvas.style.display = 'none'; return; }
+  box.style.display = 'none';
+  canvas.style.display = 'block';
+  drawGraph(canvas, data.x, data.y);
+}
+
+function drawGraph(canvas, xs, ys) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, pad = 40;
+  ctx.clearRect(0, 0, W, H);
+  const xmin = Math.min(...xs), xmax = Math.max(...xs);
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const sx = v => pad + ((v - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
+  const sy = v => H - pad - ((v - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
+
+  // grid
+  ctx.strokeStyle = "#2a3640"; ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const gx = pad + (i / 10) * (W - 2 * pad);
+    ctx.beginPath(); ctx.moveTo(gx, pad); ctx.lineTo(gx, H - pad); ctx.stroke();
+    const gy = pad + (i / 10) * (H - 2 * pad);
+    ctx.beginPath(); ctx.moveTo(pad, gy); ctx.lineTo(W - pad, gy); ctx.stroke();
+  }
+  // axes (y=0 / x=0 if within range)
+  ctx.strokeStyle = "#6f828c"; ctx.lineWidth = 1.2;
+  if (ymin < 0 && ymax > 0) {
+    ctx.beginPath(); ctx.moveTo(pad, sy(0)); ctx.lineTo(W - pad, sy(0)); ctx.stroke();
+  }
+  if (xmin < 0 && xmax > 0) {
+    ctx.beginPath(); ctx.moveTo(sx(0), pad); ctx.lineTo(sx(0), H - pad); ctx.stroke();
+  }
+  // curve
+  ctx.strokeStyle = "#3fb8af"; ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  xs.forEach((x, i) => {
+    const px = sx(x), py = sy(ys[i]);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#aebac2"; ctx.font = "11px IBM Plex Mono, monospace";
+  ctx.fillText(xmin.toFixed(2), pad, H - pad + 16);
+  ctx.fillText(xmax.toFixed(2), W - pad - 30, H - pad + 16);
+  ctx.fillText(ymax.toFixed(2), 4, pad + 4);
+  ctx.fillText(ymin.toFixed(2), 4, H - pad);
+}
+</script>
+{% endblock %}

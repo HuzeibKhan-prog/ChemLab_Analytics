@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Laboratory Data Analyzer — ChemLab Analytics{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Module 03 &middot; 05</div>
+    <h1>Laboratory Data Analyzer</h1>
+    <p class="desc">Upload experimental readings as a CSV. Pandas computes averages, extremes, standard deviation and correlation; Matplotlib &amp; Seaborn render the charts.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title"><span class="led"></span>Load Data</div>
+  <div class="grid grid-2">
+    <div class="field">
+      <label>Upload a CSV file</label>
+      <input type="file" id="csv-file" accept=".csv">
+    </div>
+    <div class="field" style="display:flex; align-items:flex-end; gap:10px;">
+      <button onclick="uploadCsv()">Upload &amp; Analyze</button>
+      <button class="secondary" onclick="loadSample()">Load Sample Dataset</button>
+    </div>
+  </div>
+  <p class="hint">Sample dataset: <code>Temperature,Reaction_Rate</code> — 7 rows bundled with the app.</p>
+  <div class="result-box" id="upload-result" style="display:none;"></div>
+</div>
+
+<div id="summary-section" style="display:none;">
+  <div class="panel">
+    <div class="panel-title"><span class="led"></span>Dataset Summary</div>
+    <div id="summary-stats" class="grid grid-3"></div>
+    <div id="preview-table" style="margin-top:18px;"></div>
+  </div>
+
+  <div class="panel" id="corr-panel" style="display:none;">
+    <div class="panel-title"><span class="led"></span>Correlation Matrix</div>
+    <div id="corr-table"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><span class="led"></span>Visualization</div>
+    <div class="grid grid-3">
+      <div class="field">
+        <label>Chart type</label>
+        <select id="chart-type">
+          <option value="line">Line chart</option>
+          <option value="scatter">Scatter plot</option>
+          <option value="bar">Bar chart</option>
+          <option value="distribution">Distribution</option>
+          <option value="heatmap">Correlation heatmap</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>X column</label>
+        <select id="chart-x"></select>
+      </div>
+      <div class="field" id="chart-y-wrap">
+        <label>Y column</label>
+        <select id="chart-y"></select>
+      </div>
+    </div>
+    <button onclick="renderChart()">Generate Chart</button>
+    <div class="result-box" id="chart-error" style="display:none;"></div>
+    <img id="chart-img" class="chart-img" style="display:none;">
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let numericColumns = [];
+let allColumns = [];
+
+async function uploadCsv() {
+  const box = document.getElementById('upload-result');
+  const fileInput = document.getElementById('csv-file');
+  if (!fileInput.files.length) { showError(box, "Choose a CSV file first."); return; }
+  const fd = new FormData();
+  fd.append('file', fileInput.files[0]);
+  const data = await postForm('/api/analyzer/upload', fd);
+  if (!data.ok) { showError(box, data.error); return; }
+  box.style.display = 'none';
+  applySummary(data.summary, data.filename);
+}
+
+async function loadSample() {
+  const box = document.getElementById('upload-result');
+  const data = await postJSON('/api/analyzer/sample', {});
+  if (!data.ok) { showError(box, data.error); return; }
+  box.style.display = 'none';
+  applySummary(data.summary, data.filename);
+}
+
+function applySummary(summary, filename) {
+  document.getElementById('summary-section').style.display = 'block';
+  numericColumns = summary.numeric_columns;
+  allColumns = summary.columns;
+
+  const statsHtml = numericColumns.map(col => {
+    const s = summary.stats[col];
+    return `<div class="panel" style="margin-bottom:0;">
+      <div class="panel-title"><span class="led"></span>${col}</div>
+      ${renderKV([
+        ["Average", s.average], ["Max", s.max], ["Min", s.min],
+        ["Std Dev", s.std_dev !== null ? s.std_dev : "—"], ["Count", s.count],
+      ])}
+    </div>`;
+  }).join('');
+  document.getElementById('summary-stats').innerHTML = statsHtml;
+
+  // preview table
+  const preview = summary.preview;
+  if (preview.length) {
+    const cols = Object.keys(preview[0]);
+    let table = '<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    preview.forEach(row => {
+      table += '<tr>' + cols.map(c => `<td>${row[c]}</td>`).join('') + '</tr>';
+    });
+    table += '</tbody></table>';
+    document.getElementById('preview-table').innerHTML =
+      `<div class="panel-title" style="margin-top:6px;"><span class="led"></span>Preview (first 10 rows) — ${filename}</div>` + table;
+  }
+
+  // correlation matrix
+  const corrPanel = document.getElementById('corr-panel');
+  if (summary.correlation) {
+    corrPanel.style.display = 'block';
+    const cols = summary.correlation.columns;
+    let table = '<table><thead><tr><th></th>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    summary.correlation.matrix.forEach((row, i) => {
+      table += `<tr><th>${cols[i]}</th>` + row.map(v => `<td>${v}</td>`).join('') + '</tr>';
+    });
+    table += '</tbody></table>';
+    document.getElementById('corr-table').innerHTML = table;
+  } else {
+    corrPanel.style.display = 'none';
+  }
+
+  // populate chart column selectors
+  const xSel = document.getElementById('chart-x');
+  const ySel = document.getElementById('chart-y');
+  xSel.innerHTML = allColumns.map(c => `<option value="${c}">${c}</option>`).join('');
+  ySel.innerHTML = numericColumns.map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('chart-img').style.display = 'none';
+}
+
+document.getElementById('chart-type').addEventListener('change', () => {
+  const type = document.getElementById('chart-type').value;
+  const needsY = (type === 'line' || type === 'scatter' || type === 'bar');
+  document.getElementById('chart-y-wrap').style.display = needsY ? 'block' : 'none';
+});
+
+async function renderChart() {
+  const errBox = document.getElementById('chart-error');
+  const img = document.getElementById('chart-img');
+  const chart_type = document.getElementById('chart-type').value;
+  const x_col = document.getElementById('chart-x').value;
+  const y_col = document.getElementById('chart-y').value;
+  const data = await postJSON('/api/analyzer/chart', { chart_type, x_col, y_col });
+  if (!data.ok) { showError(errBox, data.error); img.style.display = 'none'; return; }
+  errBox.style.display = 'none';
+  img.src = 'data:image/png;base64,' + data.image_base64;
+  img.style.display = 'block';
+}
+</script>
+{% endblock %}
