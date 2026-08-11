@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+<button class="menu-toggle">☰</button>
 <div class="shell">
-
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark"></div>
@@ -23,7 +23,7 @@
       <a href="{{ url_for('analyzer_page') }}" class="{{ 'active' if active == 'analyzer' else '' }}"><span class="dot"></span>Lab Data Analyzer</a>
       <a href="{{ url_for('experiments_page') }}" class="{{ 'active' if active == 'experiments' else '' }}"><span class="dot"></span>Experiment Analysis</a>
     </nav>
-    <div class="sidebar-foot">© 2026 ChemLab Analytics<br></div>
+    <div class="sidebar-foot">© 2026 ChemLab Analytics<br><b>Author</b><br>Huzeib Khan</div>
   </aside>
 
   <main class="main">

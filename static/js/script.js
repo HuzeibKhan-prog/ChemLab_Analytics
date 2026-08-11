@@ -43,3 +43,11 @@ function fieldOrNull(id) {
   const v = document.getElementById(id).value;
   return v === "" ? null : v;
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const toggleBtn = document.querySelector(".menu-toggle");
+  const sidebar = document.querySelector(".sidebar");
+
+  toggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("open");
+  });
+});
